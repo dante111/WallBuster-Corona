@@ -11,7 +11,7 @@ local scene = composer.newScene()
 -- -------------------------------------------------------------------------------
 
 local screenWidth, screenHeight = display.contentWidth, display.contentHeight
-local screenCenter = { x = screenWidth / 2, y = screenHeight / 2 }
+local screenCenter = { x = display.contentCenterX, y = display.contentCenterY }
 -- print( screenWidth .. screenHeight)
 local GRID_WIDTH = 6
 local GRID_HEIGHT = 6
@@ -101,14 +101,18 @@ local function displayCircle(dot)
         circle.strokeWidth = 5
         circle:setStrokeColor( 1, 0, 0 )
     end
-    circle.tapListener = function(event)
-        local circle = event.target
-            if ( circle.taps == event.numTaps ) then
+    circle.touchListener = function(event)
+        if (event.phase == "ended") then
+            local circle = event.target
+            circle.taps = circle.taps - 1
+            if ( circle.taps == 1 ) then
+                circle.strokeWidth = 0
+            elseif ( circle.taps == 0 ) then
                 circle:onDone();
             end
-            print( circle.done )
+        end
     end
-    circle:addEventListener( "tap", circle.tapListener)
+    circle:addEventListener( "touch", circle.touchListener)
 
     function circle:onDone() 
         --self.done = true

@@ -32,10 +32,6 @@ function scene:create( event )
     startText:setFillColor(1,0,0)
     sceneGroup:insert(startText)
     startButton:addEventListener( "tap", startButton.tapListener)
-    --composer.gotoScene( "game" )
-
-    -- Initialize the scene here
-    -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 end
 
 
