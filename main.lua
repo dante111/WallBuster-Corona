@@ -8,7 +8,7 @@
 
 local composer = require("composer")
 
+system.activate( "multitouch" )
+
 composer.gotoScene( "start" )
-
-
 

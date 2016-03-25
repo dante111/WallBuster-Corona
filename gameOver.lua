@@ -15,7 +15,10 @@ local scene = composer.newScene()
 -- "scene:create()"
 function scene:create( event )
 
-
+    for k, v in pairs(event.params) do
+        print (k)
+        print (v)
+    end
     
     local sceneGroup = self.view
     local screenWidth, screenHeight = display.contentWidth, display.contentHeight
@@ -25,10 +28,16 @@ function scene:create( event )
     restartButton.tapListener = function(event)
         composer.gotoScene("game")
     end
+    scoreText = display.newText({x=screenCenter.x , y=screenCenter.y - 200 , text="SCORE : " .. event.params.score , fontSize = 100, font=native.systemFontBold})
     sceneGroup:insert(restartButton)
+    sceneGroup:insert(scoreText)
 
+    levelText = display.newText({x=screenCenter.x , y=screenCenter.y + 200 , text="LEVEL : " .. event.params.level , fontSize = 100, font=native.systemFontBold})
+    sceneGroup:insert(levelText)
+    --print( "game over now score is below : ")
+    --print( puzzleLoader.score)
     restartButton:setFillColor(0,0,1)
-    local restartText = display.newText({x=screenCenter.x , y=screenCenter.y , text="RESTART GAME" ,fontSize=50})
+    local restartText = display.newText({x=screenCenter.x , y=screenCenter.y , text="RESTART GAME" ,fontSize=40 })
     restartText:setFillColor(1,0,0)
     sceneGroup:insert(restartText)
     restartButton:addEventListener( "tap", restartButton.tapListener)
@@ -44,7 +53,8 @@ function scene:show( event )
 
     local sceneGroup = self.view
     local phase = event.phase
-
+    scoreText.text ="SCORE : " .. event.params.score
+    levelText.text ="LEVEL : " .. event.params.level - 1
     if ( phase == "will" ) then
         -- Called when the scene is still off screen (but is about to come on screen)
     elseif ( phase == "did" ) then

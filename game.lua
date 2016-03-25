@@ -21,7 +21,7 @@ local OFFSET_WIDTH = screenWidth * 1 / 12
 local OFFSET_HEIGHT = screenHeight * 1 / 6
 local CIRCLE_RADIUS = CELL_WIDTH / 2
 
-RANDOM = true
+local RANDOM = true
 
 -- Setup grid
 
@@ -45,27 +45,40 @@ puzzleLoader = {}
 puzzleLoader.puzzles = puzzles
 puzzleLoader.level = 0
 puzzleLoader.speed = 7000
+puzzleLoader.score = 0
+
+
 puzzleLoader.timeOver = function (obj)
-    composer.gotoScene("gameOver")
-    composer.removeScene("game",false)
+    print("Level" .. puzzleLoader.level)
+    local options = {
+        effect = "fade",
+        time = 400,
+        params = {
+            score = puzzleLoader.score,
+            level = puzzleLoader.level
+        }
+    }
+    composer.gotoScene("gameOver", options)
+    composer.removeScene("game", false)
 end
 
 function puzzleLoader:loadNextPuzzle()
     --print ("Called load next puzzle")
     self.level = self.level + 1
-    self.speed=self.speed-(self.speed*0.1)
+    self.levelText.text = self.level
+    self.speed = self.speed - self.speed * 0.1
     print (self.speed)
     print (self.level)
     if (RANDOM) then
         return self:generateRandomPuzzle()
     end
-    puzzle = require( self.puzzles[self.level] )
+    local puzzle = require( self.puzzles[self.level] )
     return puzzle
 end
 
 function puzzleLoader:generateRandomPuzzle()
     -- print( "Generating random puzzle" )
-    puzzle = {
+    local puzzle = {
         dots = {
             {x=math.random( GRID_WIDTH ), y=math.random( GRID_HEIGHT ), taps=math.random( 2 )},
             {x=math.random( GRID_WIDTH ), y=math.random( GRID_HEIGHT ), taps=math.random( 2 )},
@@ -98,54 +111,46 @@ local function displayCircle(dot)
     circle:addEventListener( "tap", circle.tapListener)
 
     function circle:onDone() 
-        self.done = true
-        self.alpha = 0
-        self:removeEventListener( "tap", self.tapListener )
+        --self.done = true
+        --self.alpha = 0
+        --self:removeEventListener( "tap", self.tapListener )
+        self:removeSelf( )
         self.group:checkComplete()
+        if( self.taps == 2 ) then
+            puzzleLoader.score = puzzleLoader.score + 2
+        else 
+            puzzleLoader.score = puzzleLoader.score + 1
+        end
     end
 
     return circle
 end
 
 
-function displayPuzzle(puzzle, sceneGroup)
+function displayPuzzle(puzzle, background, patternGroup, foreground)
     local wall = display.newRect( screenCenter.x, screenCenter.y, 120, 120 )
     wall:setFillColor( 0.4 )
     wall.alpha = 1
     wall.zoomTranstion = transition.to( wall, { time=puzzleLoader.speed, xScale=12, yScale=12, onComplete=puzzleLoader.timeOver })
-    sceneGroup:insert( wall )
-    local patternGroup = display.newGroup( )
-    local levelText = display.newText({x=screenCenter.x , y=20 , text=puzzleLoader.level ,fontSize=50 ,font=native.systemFontBold})
-    patternGroup:insert( levelText )
+    background:insert( wall )
     for k,dot in pairs(puzzle.dots) do
-        circle = displayCircle(dot)
+        local circle = displayCircle(dot)
         circle.group = patternGroup
         patternGroup:insert( circle )
-        print( "Scene group Children: " .. patternGroup.numChildren )
     end
-    sceneGroup:insert( patternGroup )
-
-
 
     function patternGroup:checkComplete()
-        print( "Checking group Children: " .. self.numChildren )
-        for i = 1, self.numChildren do
-            if self[i].done == false then
-                return false
-            end
+        print("Num children" .. self.numChildren)
+        if ( self.numChildren == 0 ) then
+            self:onComplete()
         end
-        print( "Yayyy, you did it" )
-        self:onComplete()
-        return true
     end
-
     function patternGroup:onComplete()
-        self:removeSelf( )
         wall:removeSelf( )
         transition.cancel(wall.zoomTransition)
         wall = nil
         local puzzle = puzzleLoader:loadNextPuzzle()
-        displayPuzzle(puzzle, sceneGroup)
+        displayPuzzle(puzzle, background, patternGroup, foreground)
     end
 end
 
@@ -160,15 +165,20 @@ function scene:create( event )
     -- Example: add display objects to "sceneGroup", add touch listeners, etc.
 
     local sceneGroup = self.view
-
-    local corridor = display.newImageRect( "assets/corridor.png", 720, 1280 )
+    local corridor = display.newImageRect( "assets/Anriduh.png", 720, 1280 )
     corridor.x = screenWidth / 2
     corridor.y = screenHeight / 2
-    sceneGroup:insert( corridor )
+    local background = display.newGroup( )
+    background:insert (corridor )
+    sceneGroup:insert( background )
+    local patternGroup = display.newGroup( )
+    sceneGroup:insert( patternGroup )
+    local foreground = display.newGroup( )
+    sceneGroup:insert( foreground )
+    puzzleLoader.levelText = display.newText({x=screenCenter.x , y=30 , text=puzzleLoader.level ,fontSize=80 ,font=native.systemFontBold})
+    foreground:insert (puzzleLoader.levelText)
     local puzzle = puzzleLoader:loadNextPuzzle()
-    
-    displayPuzzle(puzzle, sceneGroup)
-
+    displayPuzzle(puzzle, background, patternGroup, foreground)
 end
 
 
@@ -208,7 +218,6 @@ end
 function scene:destroy( event )
 
     local sceneGroup = self.view
-    print ("ASDHKASJHDKJASHDKJHSAKDJHSAKJDHKSAJHDKJSAHDKJHSA")
 
     -- Called prior to the removal of scene's view
     -- Insert code here to clean up the scene
