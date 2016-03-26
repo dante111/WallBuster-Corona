@@ -108,7 +108,7 @@ local function displayCircle(dot)
         circle.strokeWidth = 5
         circle:setStrokeColor( 1, 0, 0 )
     end
-    circle.touchListener = function(event)
+    function circle:touch(event)
         if (event.phase == "ended") then
             puzzleLoader.score = puzzleLoader.score + 1
             audio.play( puzzleLoader.tapSound )
@@ -122,12 +122,9 @@ local function displayCircle(dot)
         end
         return true
     end
-    circle:addEventListener( "touch", circle.touchListener)
+    circle:addEventListener( "touch" )
 
     function circle:onDone() 
-        --self.done = true
-        --self.alpha = 0
-        --self:removeEventListener( "tap", self.tapListener )
         self:removeSelf( )
         circles[self] = nil
         self.group:checkComplete()
@@ -139,12 +136,12 @@ end
 function displayDummyCircle(dot)
     local pos = grid[dot.x][dot.y]
     local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS )
-    circle.touchListener = function(event)
+    function circle:touch(event)
         if (event.phase == "ended") then
             puzzleLoader:timeOver()
         end
     end
-    circle:addEventListener( "touch", circle.touchListener)
+    circle:addEventListener( "touch" )
     circle:setFillColor(1, 0, 0)
     return circle
 end
