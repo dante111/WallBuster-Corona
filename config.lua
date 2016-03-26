@@ -5,7 +5,7 @@ application =
 	{
 		width = 720,
 		height = 1280, 
-		scale = "adaptive",
+		scale = "zoomEven",
 		fps = 30,
 		
 		--[[

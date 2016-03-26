@@ -47,9 +47,9 @@ puzzleLoader.level = 0
 puzzleLoader.speed = 7000
 puzzleLoader.score = 0
 
-
+local circles = {}
+local dummyCircles = {}
 puzzleLoader.timeOver = function (obj)
-    print("Level" .. puzzleLoader.level)
     local options = {
         effect = "fade",
         time = 400,
@@ -58,6 +58,9 @@ puzzleLoader.timeOver = function (obj)
             level = puzzleLoader.level
         }
     }
+    transition.cancel(puzzleLoader.wall.zoomTransition)
+    puzzleLoader.overSound = audio.loadSound( "assets/gameOver.mp3" )
+    audio.play( puzzleLoader.overSound )
     composer.gotoScene("gameOver", options)
     composer.removeScene("game", false)
 end
@@ -66,7 +69,7 @@ function puzzleLoader:loadNextPuzzle()
     --print ("Called load next puzzle")
     self.level = self.level + 1
     self.levelText.text = self.level
-    self.speed = self.speed - self.speed * 0.1
+    self.speed = self.speed * 0.95
     print (self.speed)
     print (self.level)
     if (RANDOM) then
@@ -84,7 +87,12 @@ function puzzleLoader:generateRandomPuzzle()
             {x=math.random( GRID_WIDTH ), y=math.random( GRID_HEIGHT ), taps=math.random( 2 )},
             {x=math.random( GRID_WIDTH ), y=math.random( GRID_HEIGHT ), taps=math.random( 2 )}
         },
+        dummyDots = { }
     }
+    n = math.random( 3 ) - 1
+    for i = 1, n do
+        puzzle.dummyDots[#puzzle.dummyDots+1] = {x=math.random( GRID_WIDTH ), y=math.random( GRID_HEIGHT )}
+    end
     -- print( "Generated random puzzle" )
     return puzzle
 end 
@@ -94,7 +102,6 @@ local function displayCircle(dot)
     --print( "Displaying circle" )
     local pos = grid[dot.x][dot.y]
     local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS )
-    circle:setFillColor( 1 )
     circle.done = false
     circle.taps = dot.taps
     if circle.taps == 2 then
@@ -103,6 +110,8 @@ local function displayCircle(dot)
     end
     circle.touchListener = function(event)
         if (event.phase == "ended") then
+            puzzleLoader.score = puzzleLoader.score + 1
+            audio.play( puzzleLoader.tapSound )
             local circle = event.target
             circle.taps = circle.taps - 1
             if ( circle.taps == 1 ) then
@@ -111,6 +120,7 @@ local function displayCircle(dot)
                 circle:onDone();
             end
         end
+        return true
     end
     circle:addEventListener( "touch", circle.touchListener)
 
@@ -119,29 +129,47 @@ local function displayCircle(dot)
         --self.alpha = 0
         --self:removeEventListener( "tap", self.tapListener )
         self:removeSelf( )
+        circles[self] = nil
         self.group:checkComplete()
-        if( self.taps == 2 ) then
-            puzzleLoader.score = puzzleLoader.score + 2
-        else 
-            puzzleLoader.score = puzzleLoader.score + 1
-        end
     end
 
     return circle
 end
 
+function displayDummyCircle(dot)
+    local pos = grid[dot.x][dot.y]
+    local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS )
+    circle.touchListener = function(event)
+        if (event.phase == "ended") then
+            puzzleLoader:timeOver()
+        end
+    end
+    circle:addEventListener( "touch", circle.touchListener)
+    circle:setFillColor(1, 0, 0)
+    return circle
+end
 
-function displayPuzzle(puzzle, background, patternGroup, foreground)
+function displayPuzzle(puzzle, background, patternGroup, dummyDotsGroup, foreground)
     local wall = display.newRect( screenCenter.x, screenCenter.y, 120, 120 )
     wall:setFillColor( 0.4 )
     wall.alpha = 1
-    wall.zoomTranstion = transition.to( wall, { time=puzzleLoader.speed, xScale=12, yScale=12, onComplete=puzzleLoader.timeOver })
+    wall.zoomTranstion = transition.to( wall, { time=puzzleLoader.speed, xScale=10,  yScale=10, onComplete=puzzleLoader.timeOver })
     background:insert( wall )
+    puzzleLoader.wall = wall
+    for k,dot in pairs(puzzle.dummyDots) do
+        local circle = displayDummyCircle(dot)
+        circle.group = dummyDotsGroup
+        dummyDotsGroup:insert( circle )
+        dummyCircles[#dummyCircles + 1] = circle
+    end
+
     for k,dot in pairs(puzzle.dots) do
         local circle = displayCircle(dot)
         circle.group = patternGroup
         patternGroup:insert( circle )
+        circles[#circles + 1] = circle
     end
+
 
     function patternGroup:checkComplete()
         print("Num children" .. self.numChildren)
@@ -151,11 +179,16 @@ function displayPuzzle(puzzle, background, patternGroup, foreground)
     end
     function patternGroup:onComplete()
         wall:removeSelf( )
+        for i = 1, #dummyCircles do
+            dummyCircles[i]:removeSelf()
+            dummyCircles[i] = nil
+        end
         transition.cancel(wall.zoomTransition)
         wall = nil
         local puzzle = puzzleLoader:loadNextPuzzle()
-        displayPuzzle(puzzle, background, patternGroup, foreground)
+        displayPuzzle(puzzle, background, patternGroup, dummyDotsGroup, foreground)
     end
+    print( "Dummy numChildren" ..  dummyDotsGroup.numChildren)
 end
 
 
@@ -175,14 +208,17 @@ function scene:create( event )
     local background = display.newGroup( )
     background:insert (corridor )
     sceneGroup:insert( background )
+    local dummyDotsGroup = display.newGroup( )
+    sceneGroup:insert (dummyDotsGroup)
     local patternGroup = display.newGroup( )
     sceneGroup:insert( patternGroup )
     local foreground = display.newGroup( )
     sceneGroup:insert( foreground )
-    puzzleLoader.levelText = display.newText({x=screenCenter.x , y=30 , text=puzzleLoader.level ,fontSize=80 ,font=native.systemFontBold})
+    puzzleLoader.levelText = display.newText({x=screenCenter.x , y=((display.contentHeight-display.actualContentHeight)/ 2) + 50 , text=puzzleLoader.level ,fontSize=80 ,font=native.systemFontBold})
     foreground:insert (puzzleLoader.levelText)
     local puzzle = puzzleLoader:loadNextPuzzle()
-    displayPuzzle(puzzle, background, patternGroup, foreground)
+    displayPuzzle(puzzle, background, patternGroup, dummyDotsGroup, foreground)
+    puzzleLoader.tapSound = audio.loadSound( "assets/tap.mp3" )
 end
 
 

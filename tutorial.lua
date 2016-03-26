@@ -12,40 +12,50 @@ local scene = composer.newScene()
 -- -------------------------------------------------------------------------------
 
 
+-- print( screenWidth .. screenHeight)
+
 -- "scene:create()"
 function scene:create( event )	
-    local sceneGroup = self.view
     local screenWidth, screenHeight = display.contentWidth, display.contentHeight
-	local screenCenter = { x = screenWidth / 2, y = screenHeight / 2 }
+    local screenCenter = { x = screenWidth / 2, y = screenHeight / 2 }
+    local GRID_WIDTH = 6
+    local GRID_HEIGHT = 6
+    local CELL_WIDTH = screenWidth / GRID_WIDTH * 5 / 6
+    local CELL_HEIGHT = screenHeight / GRID_HEIGHT * 2 / 3
+    local OFFSET_WIDTH = screenWidth * 1 / 12
+    local OFFSET_HEIGHT = screenHeight * 1 / 6
+    local CIRCLE_RADIUS = CELL_WIDTH / 2
+    local sceneGroup = self.view
+    
 	local corridor = display.newImageRect( "assets/Anriduh.png", 720, 1280 )
     corridor.x = screenWidth / 2
     corridor.y = screenHeight / 2
     sceneGroup:insert(corridor)
-    local startButton = display.newRoundedRect( screenCenter.x, screenCenter.y, 350, 150 ,20)
-    startButton.tapListener = function(event)
-        composer.gotoScene("game")
+    local backButton = display.newRoundedRect( screenCenter.x, screenCenter.y+400, 350, 150 ,20)
+    backButton.tapListener = function(event)
+        composer.gotoScene("start")
     end
-    sceneGroup:insert(startButton)
-    local titleText = display.newText({x=screenCenter.x , y=screenCenter.y - 400 , text="WALL BUSTER" ,fontSize=80,font=native.systemFontBold})
-    local titleText2 = display.newText({x=screenCenter.x , y=screenCenter.y - 200 , text="Don't crash into the wall !!!" ,fontSize=40,font=native.systemFontBold})
-    startButton:setFillColor(0,0,0)
+    sceneGroup:insert(backButton)
+    local titleText = display.newText({x=screenCenter.x , y=screenCenter.y - 500 , text="Tap once" ,fontSize=50,font=native.systemFontBold})
+    local titleText2 = display.newText({x=screenCenter.x , y=screenCenter.y - 300 , text="Tap twice " ,fontSize=50,font=native.systemFontBold})
+    local titleText3 = display.newText({x=screenCenter.x , y=screenCenter.y - 100 , text="    Do NOT tap " ,fontSize=50,font=native.systemFontBold})
+    local circle1=display.newCircle(screenCenter.x-250, screenCenter.y-500, CIRCLE_RADIUS)
+    sceneGroup:insert(circle1)
+    local circle2=display.newCircle(screenCenter.x-250, screenCenter.y-300, CIRCLE_RADIUS)
+    sceneGroup:insert(circle2)
+    circle2.strokeWidth = 5
+    circle2:setStrokeColor( 1, 0, 0 )
+    local circle3=display.newCircle(screenCenter.x-250, screenCenter.y-100, CIRCLE_RADIUS)
+    sceneGroup:insert(circle3)
+    circle3:setFillColor(1,0,0)
+    backButton:setFillColor(0,0,0)
     sceneGroup:insert(titleText)
 	sceneGroup:insert(titleText2)
-    local startText = display.newText({x=screenCenter.x , y=screenCenter.y , text="NEW GAME" ,fontSize=50,font=native.systemFontBold})
-    startText:setFillColor(1,1,1)
-    sceneGroup:insert(startText)
-    startButton:addEventListener( "tap", startButton.tapListener)
-    local tutorialButton = display.newRoundedRect( screenCenter.x, screenCenter.y +400 , 350, 150 ,20)
-    tutorialButton:setFillColor(0,0,0)
-    tutorialButton.tapListener = function(event)
-        composer.gotoScene("tutorial")
-    end
-    local tutorialText = display.newText({x=screenCenter.x , y=screenCenter.y + 400, text="TUTORIAL" ,fontSize=50,font=native.systemFontBold})
-    startText:setFillColor(1,1,1)
-    sceneGroup:insert(tutorialButton)
-    sceneGroup:insert(startText)
-    sceneGroup:insert(tutorialText)
-    tutorialButton:addEventListener( "tap", tutorialButton.tapListener)
+    sceneGroup:insert(titleText3)
+    local backText = display.newText({x=screenCenter.x , y=screenCenter.y +400, text="BACK" ,fontSize=50,font=native.systemFontBold})
+    backText:setFillColor(1,1,1)
+    sceneGroup:insert(backText)
+    backButton:addEventListener( "tap", backButton.tapListener)
 end
 
 
@@ -60,7 +70,7 @@ function scene:show( event )
     elseif ( phase == "did" ) then
         -- Called when the scene is now on screen
         -- Insert code here to make the scene come alive
-        -- Example: start timers, begin animation, play audio, etc.
+        -- Example: back timers, begin animation, play audio, etc.
     end
 end
 
