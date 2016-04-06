@@ -21,7 +21,8 @@ local OFFSET_WIDTH = screenWidth * 1 / 12
 local OFFSET_HEIGHT = screenHeight * 1 / 6
 local CIRCLE_RADIUS = CELL_WIDTH / 2
 
-local RANDOM = true
+local RANDOM = false
+local EPSILON = 0.01
 
 -- Setup grid
 
@@ -102,7 +103,6 @@ local function displayCircle(dot)
     --print( "Displaying circle" )
     local pos = grid[dot.x][dot.y]
     local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS )
-    circle.done = false
     circle.taps = dot.taps
     if circle.taps == 2 then
         circle.strokeWidth = 5
@@ -123,7 +123,6 @@ local function displayCircle(dot)
         return true
     end
     circle:addEventListener( "touch" )
-
     function circle:onDone() 
         self:removeSelf( )
         circles[self] = nil
@@ -146,6 +145,68 @@ function displayDummyCircle(dot)
     return circle
 end
 
+function displayDraggableCircle(dot, destination)
+    local pos = grid[dot.x][dot.y]
+    local goal = grid[destination.x][destination.y]
+    local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS )
+    local line = display.newLine( pos.x, pos.y, goal.x, goal.y )
+    line:setStrokeColor( 1, 0, 0, 1 )
+    line.strokeWidth = 8
+    circle.line = line
+    circle:setFillColor(1, 0, 1)
+
+    function circle:touch( event )
+        local xMin = pos.x
+        local xMax = goal.x
+        local yMin = pos.y
+        local yMax = goal.y
+        local phase = event.phase
+        if "began" == phase then
+            display.getCurrentStage():setFocus( self, event.id )
+                       
+            -- Store initial touch position on the actual object - prevents jumping when touched
+            self.xInit = self.x
+            self.yInit = self.y
+            self.xStart = event.x - self.x
+            self.yStart = event.y - self.y
+        elseif "moved" == phase then
+                self.x = event.x - self.xStart
+                if (self.x < xMin) then self.x = xMin end
+                if (self.x > xMax) then self.x = xMax end                
+ 
+                self.y = event.y - self.yStart
+                if (self.y < yMin) then self.y = yMin end
+                if (self.y > yMax) then self.y = yMax end 
+                -- print( "t pos: " .. t.x .. " y: " .. t.y)
+                -- print( "xMax" .. xMax .. "yMax" .. yMax)
+                if (math.abs(self.x - xMax) < EPSILON and math.abs(self.y - yMax) < EPSILON) then
+                    self.start:removeSelf( )
+                    self.finish:removeSelf( )
+                    self.line:removeSelf( )
+                    self:removeSelf( )
+                end
+ 
+        elseif "ended" == phase or "cancelled" == phase then
+            self.x = self.xInit
+            self.y = self.yInit
+            display.getCurrentStage():setFocus( self, nil )
+        end
+    end
+
+    circle:addEventListener( "touch" )
+
+    return circle, line
+
+end
+function displayHole( hole )
+    local pos = grid[hole.x][hole.y]
+    local circle = display.newCircle( pos.x, pos.y, CIRCLE_RADIUS)
+    circle:setFillColor(0, 0, 0, 0)
+    circle.strokeWidth = 5
+    return circle
+end
+
+
 function displayPuzzle(puzzle, background, patternGroup, dummyDotsGroup, foreground)
     local wall = display.newRect( screenCenter.x, screenCenter.y, 120, 120 )
     wall:setFillColor( 0.4 )
@@ -153,20 +214,34 @@ function displayPuzzle(puzzle, background, patternGroup, dummyDotsGroup, foregro
     wall.zoomTranstion = transition.to( wall, { time=puzzleLoader.speed, xScale=10,  yScale=10, onComplete=puzzleLoader.timeOver })
     background:insert( wall )
     puzzleLoader.wall = wall
-    for k,dot in pairs(puzzle.dummyDots) do
-        local circle = displayDummyCircle(dot)
-        circle.group = dummyDotsGroup
-        dummyDotsGroup:insert( circle )
-        dummyCircles[#dummyCircles + 1] = circle
+    if ( puzzle.dummyDots ~= nil ) then
+        for k,dot in pairs(puzzle.dummyDots) do
+            local circle = displayDummyCircle(dot)
+            circle.group = dummyDotsGroup
+            dummyDotsGroup:insert( circle )
+            dummyCircles[#dummyCircles + 1] = circle
+        end
     end
-
-    for k,dot in pairs(puzzle.dots) do
+    for k,dot in pairs( puzzle.dots ) do
         local circle = displayCircle(dot)
         circle.group = patternGroup
         patternGroup:insert( circle )
         circles[#circles + 1] = circle
     end
 
+    if ( puzzle.swipes ~= nil ) then
+        for k, swipe in pairs( puzzle.swipes) do
+            local holeStart = displayHole( swipe.start )
+            local holeFinish = displayHole( swipe.finish )
+            local circle, line = displayDraggableCircle( swipe.start, swipe.finish )
+            circle.start = holeStart
+            circle.finish = holeFinish
+            patternGroup:insert( holeStart )
+            patternGroup:insert( holeFinish )
+            patternGroup:insert( circle )
+            background:insert( line )
+        end
+    end
 
     function patternGroup:checkComplete()
         print("Num children" .. self.numChildren)
