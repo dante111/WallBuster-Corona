@@ -27,7 +27,7 @@ function scene:create( event )
     local CIRCLE_RADIUS = CELL_WIDTH / 2
     local sceneGroup = self.view
     
-	local corridor = display.newImageRect( "assets/Anriduh.png", 720, 1280 )
+	local corridor = display.newImageRect( "assets/corridor.png", 720, 1280 )
     corridor.x = screenWidth / 2
     corridor.y = screenHeight / 2
     sceneGroup:insert(corridor)
@@ -48,10 +48,29 @@ function scene:create( event )
     local circle3=display.newCircle(screenCenter.x-250, screenCenter.y-100, CIRCLE_RADIUS)
     sceneGroup:insert(circle3)
     circle3:setFillColor(1,0,0)
+
+    local line = display.newLine( screenCenter.x-250, screenCenter.y+100, screenCenter.x+250, screenCenter.y+100 )
+    line.alpha = 0.5
+    line:setStrokeColor( 0, 0, 0 )
+    line.strokeWidth = 100
+    sceneGroup:insert(line)
+
+    local circle4=display.newCircle(screenCenter.x-250, screenCenter.y+100, CIRCLE_RADIUS)
+    sceneGroup:insert(circle4)
+
+    local circle = display.newCircle( screenCenter.x+250, screenCenter.y+100, CIRCLE_RADIUS)
+    circle:setFillColor(0, 0, 0)
+    circle.strokeWidth = 5
+    circle.alpha = 0.5
+    sceneGroup:insert(circle)
+    local titleText4 = display.newText({x=screenCenter.x , y=screenCenter.y + 200 , text="Swipe" ,fontSize=50,font=native.systemFontBold})
+
+
     backButton:setFillColor(0,0,0)
     sceneGroup:insert(titleText)
 	sceneGroup:insert(titleText2)
     sceneGroup:insert(titleText3)
+    sceneGroup:insert(titleText4)
     local backText = display.newText({x=screenCenter.x , y=screenCenter.y +400, text="BACK" ,fontSize=50,font=native.systemFontBold})
     backText:setFillColor(1,1,1)
     sceneGroup:insert(backText)

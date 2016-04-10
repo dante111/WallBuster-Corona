@@ -17,7 +17,7 @@ function scene:create( event )
     local sceneGroup = self.view
     local screenWidth, screenHeight = display.contentWidth, display.contentHeight
 	local screenCenter = { x = screenWidth / 2, y = screenHeight / 2 }
-	local corridor = display.newImageRect( "assets/Anriduh.png", 720, 1280 )
+	local corridor = display.newImageRect( "assets/corridor.png", 720, 1280 )
     corridor.x = screenWidth / 2
     corridor.y = screenHeight / 2
     sceneGroup:insert(corridor)
